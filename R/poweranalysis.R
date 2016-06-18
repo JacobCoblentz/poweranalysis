@@ -681,7 +681,4 @@ trainingpatternlayouts <- list(
 
 results <- ptanalyzer(dirin, dirout, t.graph, trainingtypes, trainingpatternlayouts)
 
-merge(x = test, y = test2, )
-?merge
-
 #not run
