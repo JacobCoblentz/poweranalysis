@@ -7,7 +7,7 @@ create_patterns <- function(pl)
   for (f in 1:length(pl))
   {
     #f = 1
-    
+
     type <- labels(pl[f])
     pd <- as.data.frame(pl[f])
     even <- 1
@@ -18,7 +18,7 @@ create_patterns <- function(pl)
     {
       p <- array(even, c(pd[i,]))
       pattern <- append(pattern, p)
-      
+
       if (even == 0)
       {
         even = 1
@@ -51,11 +51,11 @@ compare_patterns <- function(patterns, sample)
   {
     sample <- substr(sample, locales[1, 1], locales[nrow(locales), 1])
   }
-  
+
   distances <- NULL
   i <- NULL
   patterns[['GA1']] <- array(0, nchar(sample))
-  
+
   for (i in 1:length(patterns))
   {
     pattern <-
@@ -68,10 +68,10 @@ compare_patterns <- function(patterns, sample)
     distances <- rbind(distances, c(type, dist))
   }
   distances
-  
+
   min <- which.min(apply(distances, MARGIN = 1, min))
   predictedtype <- distances[min, 1]
-  
+
   return(predictedtype)
 }
 
@@ -79,7 +79,7 @@ compare_patterns <- function(patterns, sample)
 predict_type <- function(types, tlength, ga3l, ga2l)
 {
   idtype <- ''
-  
+
   for (t in types)
   {
     if (tlength < as.integer(t[3]) && tlength > as.integer(t[2]) &&
@@ -99,12 +99,12 @@ engine <- function(header, data, types, t.graph, patternlayouts)
   #Debug
   # header = headers[[34]][[1]]
   # line = datas[[34]][[1]]
-  
+
   for (i in 3:length(line))
   {
     line[, i] = as.numeric(line[, i])
   }
-  
+
   line[, 11] <-
     as.double(1.1421 * line[, 4] ^ 2 - 26.69 * line[, 4] + 225.24)
   line$Power5s = as.numeric(stats::filter(
@@ -148,17 +148,17 @@ engine <- function(header, data, types, t.graph, patternlayouts)
     sides = 2
   )
   line$ID <- seq.int(nrow(line))
-  
+
   line$Power5s[is.na(line$Power5s)] <- 0
   line$Power10s[is.na(line$Power10s)] <- 0
   line$Power20s[is.na(line$Power20s)] <- 0
-  
+
   line <-
     line %>% mutate(IsIntervall = ifelse(Power20s > (mean(Power20s) + 15), 1, 0))
   nonintervallmeanpower = mean(subset(line, line$IsIntervall == 0)$Power20s)
   line <-
     line %>% mutate(IsIntervall = ifelse(Power20s > (nonintervallmeanpower + 40), 1, 0))
-  
+
   intervals <- subset(line, IsIntervall == 1)
   print(paste(
     header[3][[1]][2],
@@ -172,13 +172,13 @@ engine <- function(header, data, types, t.graph, patternlayouts)
     ',',
     length(intervals$HR..bpm.)
   ))
-  
+
   #Calculate Intervall Windows:
   tp20s <- turnpoints(line$IsIntervall)
   tps <-
     list(stop = c(as.integer(tp20s$pos), length(line$Power20s)))
   tps$start <- as.integer(c(1, as.integer(tp20s$pos)))
-  
+
   #Delete empty intervalls:
   toDelete = as.vector(c())
   for (i in 1:length(tps$start))
@@ -193,18 +193,18 @@ engine <- function(header, data, types, t.graph, patternlayouts)
     {
       toDelete = append(toDelete, i)
     }
-    
+
   }
   tps$start = tps$start[-toDelete]
   tps$stop = tps$stop[-toDelete]
-  
+
   #Generate intervall factor:
   tps$IntervallType <- NULL
   for (i in 1:length(tps$start))
   {
     tps$IntervallType = append(tps$IntervallType, 1)
   }
-  
+
   #Determine intervall type and smooth intervalls:
   for (i in 1:length(tps$start))
   {
@@ -227,15 +227,15 @@ engine <- function(header, data, types, t.graph, patternlayouts)
       line$IsIntervall[tps$start[i]:tps$stop[i]] = 3
       tps$IntervallType[i] = 3
     }
-    
+
     #smooth:
     line$IsIntervall[tps$start[i]:tps$stop[i]] = tps$IntervallType[i]
   }
-  
+
   tps$IntervallType <- as.factor(tps$IntervallType)
   line$Power20s <- as.integer(line$Power20s)
   tpsrange <- range(line$Power20s)
-  
+
   if (t.graph == 1)
   {
     graph <- ggplot(line)
@@ -285,19 +285,19 @@ engine <- function(header, data, types, t.graph, patternlayouts)
   #   ',',
   #   length(intervals$HR..bpm.)
   # ))
-  
+
   #Calculating SpeedHRFactor
   line$SpeedHRFactor <- line[, 11] / line$HR..bpm.
-  
+
   #Generating Stats:
   stats.GA1 <- subset(line, line$IsIntervall == 1)
   stats.GA2 <- subset(line, line$IsIntervall == 2)
   stats.Max <- subset(line, line$IsIntervall == 3)
-  
+
   c(header[3][[1]][2])
-  
+
   #output <- c(as.Date(gsub('[[:punct:]], _', '-', header[3][[1]][2])), NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
-  
+
   output <-
     data.frame(
       'Date' = as.Date(gsub('[[:punct:]]', '-', header[3][[1]][2])),
@@ -325,7 +325,7 @@ engine <- function(header, data, types, t.graph, patternlayouts)
       SpHR_GA2 = as.numeric(NA),
       SpHR_INT = as.numeric(NA)
     )
-  
+
   if (exists('stats.GA1'))
   {
     output[2] <- mean(stats.GA1$HR..bpm., na.rm = TRUE)
@@ -368,8 +368,8 @@ engine <- function(header, data, types, t.graph, patternlayouts)
   output[20] <-
     compare_patterns(create_patterns(patternlayouts), line$IsIntervall)
   output[21] <- mean(line$SpeedHRFactor, na.rm = TRUE)
-  
-  
+
+
   return(output)
 }
 
@@ -402,10 +402,10 @@ ptanalyzer <-
     tmpwd <- getwd()
     setwd(dirin)
     filenames = list.files(pattern = "*.*csv")
-    
+
     datas = list()
     headers = list()
-    
+
     for (i in 1:length(filenames))
     {
       headers[[i]] <-
@@ -424,9 +424,9 @@ ptanalyzer <-
           skip = 2
         ))
     }
-    
+
     setwd(dirout)
-    
+
     for (i in 1:length(headers))
     {
       if (headers[[i]][[1]][2][[1]][2] == 'INDOOR_CYCLING')
@@ -622,3 +622,66 @@ results <- ptanalyzer(dirin, dirout, t.graph, trainingtypes, trainingpatternlayo
 
 graph <- pta.facet.sphr(results)
 graph
+
+
+#not run
+
+dirin = 'c:/Users/jensh_000/SkyDrive/Git/rScripts/Sport/data/'
+dirout = 'c:/Users/jensh_000/SkyDrive/Git/rScripts/Sport/'
+t.graph = 1
+
+trainingtypes <- list(
+  c('GA2+1Max', 4140, 4200, 0, 1),
+  c('GA2', 5400, 5500, 0, 1),
+  c('Tabata', 2340, 2420, 1, 0),
+  c('7x2', 3060, 3120, 1, 0),
+  c('5x4', 3330, 3390, 1, 0),
+  c('5x4', 4090, 4139, 1, 0)
+)
+
+trainingpatternlayouts <- list(
+  'int2x8x20' = c(
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    240,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20,
+    10,
+    20
+  ),
+  'int5x4' = c(240, 120, 240, 120, 240, 120, 240, 120, 240),
+  'int5x4new' = c(240, 90, 240, 90, 240, 90, 240, 90, 240),
+  'GA2' = c(1200, 300, 600, 300, 240),
+  'int7x2' = c(120, 60, 120, 60, 120, 60, 120, 60, 120, 60, 120, 60, 120, 60)
+)
+
+results <- ptanalyzer(dirin, dirout, t.graph, trainingtypes, trainingpatternlayouts)
+
+merge(x = test, y = test2, )
+?merge
+
+#not run
